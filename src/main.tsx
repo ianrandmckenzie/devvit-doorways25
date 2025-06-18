@@ -1,35 +1,22 @@
 import './createPost.js';
-
 import { Devvit, useState, useWebView } from '@devvit/public-api';
-
 import type { DevvitMessage, WebViewMessage } from './message.js';
 
 Devvit.configure({
   redditAPI: true,
-  redis: true,
 });
 
-// Add a custom post type to Devvit
 Devvit.addCustomPostType({
-  name: 'Doorways \'25',
+  name: "Doorways '25",
   height: 'tall',
   render: (context) => {
-    // Load username with `useAsync` hook
+    // Load username with useState (async initializer)
     const [username] = useState(async () => {
       return (await context.reddit.getCurrentUsername()) ?? 'anon';
     });
 
-    // Load latest counter from redis with `useAsync` hook
-    const [counter, setCounter] = useState(async () => {
-      const redisCount = await context.redis.get(`counter_${context.postId}`);
-      return Number(redisCount ?? 0);
-    });
-
     const webView = useWebView<WebViewMessage, DevvitMessage>({
-      // URL of your web view content
       url: 'index.html',
-
-      // Handle messages sent from the web view
       async onMessage(message, webView) {
         switch (message.type) {
           case 'webViewReady':
@@ -37,22 +24,7 @@ Devvit.addCustomPostType({
               type: 'initialData',
               data: {
                 username: username,
-                currentCounter: counter,
-              },
-            });
-            break;
-          case 'setCounter':
-            await context.redis.set(
-              `counter_${context.postId}`,
-              message.data.newCounter.toString()
-            );
-            setCounter(message.data.newCounter);
-
-            webView.postMessage({
-              type: 'updateCounter',
-              data: {
-                currentCounter: message.data.newCounter,
-              },
+              }
             });
             break;
           default:
@@ -64,7 +36,6 @@ Devvit.addCustomPostType({
       },
     });
 
-    // Render the custom post type
     return (
       <vstack grow padding="small" backgroundColor="#ffffff">
         <vstack grow alignment="middle center">
